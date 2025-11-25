@@ -156,7 +156,7 @@ fetch logs
 | filter matchesValue(service.name, "test_log")
 ```
 
-### Step 2: Make a test spans 
+### Step 3: Make a test spans 
 
 In another terminal and in the base folder of the repo, make some logs by running this command.  The `q` querystring is the name of the trace request.
 
