@@ -114,6 +114,20 @@ fetch logs
 | filter matchesPhrase(content,"Test Log")
 ```
 
+### Step 3: Make a test log using Vector demo_log source
+
+Vector has a [demo_logs](https://vector.dev/docs/reference/configuration/sources/demo_logs/) source than can also simulate logs.  In the the `logs\vector.yaml` file, this is configured but set to send zero logs.
+
+To try this option, just adjust that file for example to 5 logs lines as shown below.
+
+```
+demo_log_source:
+    type: demo_logs
+    count: 5
+```
+
+You then just need to stop and start vector again. At startup, vector will then send in sample logs and within Dynatrace, you can verify logs in the `Logs App`.
+
 # Demo of OTEL Data
 
 In this demo, you will start up vector with the configuration to send data to the [Dynatrace OLTP API](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api).
