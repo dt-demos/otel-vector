@@ -1,0 +1,28 @@
+data_dir: "${CONFIG_DIR}/logs"
+
+sources:
+  demo_log_source:
+    type: demo_logs
+    count: 0
+    format: json
+
+  app_logs_source:
+    type: "file"
+    include:
+      - "app.log"
+
+sinks:
+  sink_dynatrace_log:
+    type: http
+    inputs:
+      - demo_log_source
+      - app_logs_source
+    uri: "${DT_BASE_URL}/api/v2/logs/ingest"
+    method: post
+    compression: gzip
+    encoding:
+      codec: json
+    request:
+      headers:
+        Authorization: "Api-Token ${DT_API_TOKEN}"
+        Content-Type: "application/json; charset=utf-8"
