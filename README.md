@@ -22,7 +22,7 @@ cd otel-vector
 
 ### Step 2: Create Dynatrace API Token
 
-This demo will send data to the [Dynatrace Log Ingest API](https://docs.dynatrace.com/docs/discover-dynatrace/references/dynatrace-api/environment-api/log-monitoring-v2/post-ingest-logs) and the [Dynatrace OLTP API](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api)
+This demo will send data to the [Dynatrace Log Ingest API](https://docs.dynatrace.com/docs/discover-dynatrace/references/dynatrace-api/environment-api/log-monitoring-v2/post-ingest-logs) and the [Dynatrace OTLP API](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api)
 
 You can just make one Dynatrace API Token with these scopes from the `Access Tokens` page within Dynatrace.
 * `openTelemetryTrace.ingest`
@@ -59,6 +59,14 @@ pip install -r requirements.txt
 # Demo of HTTP Logs
 
 In this demo, you will start up vector with the configuration to send logs to the [Dynatrace Log Ingest API](https://docs.dynatrace.com/docs/discover-dynatrace/references/dynatrace-api/environment-api/log-monitoring-v2/post-ingest-logs).
+
+The way data is sent to Dynatrace for this guide is as follows:
+
+```
+Python Sample App 
+   --> Vector Log File source (app.log)
+          --> Logs --> Vector HTTP Sink --> Dynatrace HTTP Logs API endpoint
+```
 
 ### Step 1: Start Vector
 
@@ -106,10 +114,22 @@ fetch logs
 | filter matchesPhrase(content, "log.py")
 ```
 
-# Demo of OTEL Data
+# Demo of OTEL Data - Logs and Traces
 
-In this demo, you will start up vector with the configuration to send data to the [Dynatrace OLTP API](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api).
+In this demo, you will start up vector with the configuration to send data to the [Dynatrace OTLP API](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api).  
 
+However, [due to the way Vector converts metrics to logs](https://vector.dev/docs/reference/configuration/sources/opentelemetry/#use_otlp_decoding), metrics can not be directly sent to Dynatrace.  What is required, is the Vector OpenTelemtry sink for Metrics needs to send them to an OpenTelemetry Collector first.  Then in the OpenTelemetry Collector, metrics can be exported to Dynatrace.  
+
+In next guide, only show Logs and Traces.  And in the next guide following, the setup with the OpenTelemetry Collector will be shown.
+
+The way data is sent to Dynatrace for this guide is as follows:
+
+```
+Python Sample App 
+   --> Vector OpenTelemetry Source
+          --> Logs --> Vector OpenTelemetry Sink --> Dynatrace OTLP Logs API endpoint
+          --> Traces --> Vector OpenTelemetry Sink --> Dynatrace OTLP Traces API endpoint
+```
 ### Step 1: Start Vector
 
 In a seperate terminal, run this command.  Enter `ctrl-c` to exit the program when done your demo.  
@@ -165,3 +185,74 @@ curl http://localhost:5000/trace?q=test_span
 ```
 
 Within Dynatrace, you can verify logs in the `Distributed Traces App`
+
+
+# Demo of OTEL Data - Logs, Traces and Metrics
+
+In this demo, you will start up vector with the configuration to send data to the [Dynatrace OTLP API](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api). 
+
+However, [due to the way Vector converts metrics to logs](https://vector.dev/docs/reference/configuration/sources/opentelemetry/#use_otlp_decoding), metrics can not be directly sent to Dynatrace.  What is required, is the Vector OpenTelemtry sink for Metrics needs to send them to an OpenTelemetry Collector first.  Then in the OpenTelemetry Collector, metrics can be exported to Dynatrace.  
+
+The way data is sent to Dynatrace for this guide is as follows:
+
+```
+Python Sample App 
+   --> Vector OpenTelemetry Source
+          --> Logs --> Vector OpenTelemetry Sink --> Dynatrace OTLP Logs API endpoint
+          --> Traces --> Vector OpenTelemetry Sink --> Dynatrace OTLP Traces API endpoint
+          --> Metrics --> Vector OpenTelemetry Sink --> Otel Collector Reciever --> Otel Collector Exporter to Dynatrace OTLP Metrics API endpoint
+```
+
+### Step 1: Start Vector
+
+In a seperate terminal, run this command.  Enter `ctrl-c` to exit the program when done your demo.  
+
+```
+# set environment variables
+source .env
+
+# otel with metrics
+podman run \
+  --rm \
+  -v $PWD/otel-collector/vector.yaml:/etc/vector/vector.yaml \
+  -v $PWD/app.log:/etc/vector/app.log \
+  -e VECTOR_LOG=$VECTOR_LOG \
+  -e DT_BASE_URL=$DT_BASE_URL \
+  -e DT_API_TOKEN=$DT_API_TOKEN \
+  -p 8686:8686 -p 4317:4317 -p 4318:4318 \
+  --name vector \
+  timberio/vector:0.51.1-debian
+```
+
+### Step 3: OpenTelemetry Collector 
+
+In a seperate terminal, run the following commmands.  Enter `ctrl-c` to exit the program when done your demo. 
+
+```
+# set environment variables
+source .env
+
+# start the OpenTelemetry Collector 
+podman run \
+  -e DT_BASE_URL=$DT_BASE_URL \
+  -e DT_API_TOKEN=$DT_API_TOKEN \
+  -v "${PWD}/otel-collector/otelcol-config.yaml":/etc/otelcol/config.yaml \
+  -p 5318:5318 \
+  otel/opentelemetry-collector-contrib --config /etc/otelcol/config.yaml
+```
+
+### Step 4: Start Sample App
+
+Follow the guide in the previous section to start the sample app.
+
+### Step 5: Make a test log and spans
+
+Follow the guide in the previous section to send in data and review results
+
+### Step 6: Review metrics
+
+The Demo metric has the name `demo.metric.my_metric`.  To view the metrics, use a Dynatrace notebook and the Dyantrace Query Language (DQL) as a start.
+
+```
+timeseries interval:5m, sum_metric = sum(demo.metric.my_metric)
+```

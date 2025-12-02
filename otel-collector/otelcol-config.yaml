@@ -1,0 +1,32 @@
+# modeled after where cumulativetodelta is required for Dynatrace
+# https://docs.dynatrace.com/docs/ingest-from/opentelemetry/collector/configuration
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: "0.0.0.0:5318"
+
+processors:
+  cumulativetodelta:
+    max_staleness: 25h
+
+exporters:
+  otlphttp:
+    endpoint: "${env:DT_BASE_URL}/api/v2/otlp"
+    headers:
+      Authorization: "Api-Token ${env:DT_API_TOKEN}"
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+service:
+  pipelines:
+    metrics:
+      receivers: [ otlp ]
+      processors: [ cumulativetodelta ]
+      exporters: [ debug, otlphttp ]
+  telemetry:
+    logs:
+      level: "debug"

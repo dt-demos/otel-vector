@@ -1,0 +1,52 @@
+sources:
+  otel_source:
+    type: opentelemetry
+    grpc:
+      address: "0.0.0.0:4317"
+    http:
+      address: "0.0.0.0:4318"
+    use_otlp_decoding: true
+
+sinks:
+  sink_dynatrace_otel_logs:
+    type: opentelemetry
+    inputs:
+      - otel_source.logs
+    protocol:
+      type: http
+      compression: gzip
+      method: post
+      uri: "${DT_BASE_URL}/api/v2/otlp/v1/logs"
+      encoding:
+        codec: otlp
+      request:
+        headers:
+          Authorization: "Api-Token ${DT_API_TOKEN}"
+          Content-Type: "application/x-protobuf"
+
+  sink_dynatrace_otel_traces:
+    type: opentelemetry
+    enabled: false
+    inputs:
+      - otel_source.traces
+    protocol:
+      type: http
+      compression: gzip
+      method: post
+      uri: "${DT_BASE_URL}/api/v2/otlp/v1/traces"
+      encoding:
+        codec: otlp
+      request:
+        headers:
+          Authorization: "Api-Token ${DT_API_TOKEN}"
+          Content-Type: "application/x-protobuf"
+
+  sink_otelcol_metrics:
+    type: opentelemetry 
+    inputs:
+      - otel_source.metrics
+    protocol:
+      type: http
+      uri: "http://host.docker.internal:5318/v1/metrics"  # if not using vector in docker set to http://localhost:5318/v1/metrics
+      encoding:
+        codec: otlp
