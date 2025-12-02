@@ -87,7 +87,7 @@ In a seperate terminal, run this command.  Enter `ctrl-c` to exit the program wh
 
 ```
 source .env
-vector --config-dir $(pwd) --config-yaml logs/vector-otelcol.yaml
+vector --config-yaml logs/vector-otelcol.yaml
 ```
 
 ### Approach 1 - Make a test log with Python script
@@ -129,7 +129,7 @@ In a seperate terminal, run this command.  Enter `ctrl-c` to exit the program wh
 
 ```
 source .env
-vector --config-dir $(pwd) --config-yaml otel/vector-otelcol.yaml
+vector --config-yaml otel/vector-otelcol.yaml
 ```
 
 ### Step 2: Start Sample App
