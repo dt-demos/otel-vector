@@ -1,4 +1,6 @@
-data_dir: "${VECTOR_DATA_DIR}"
+api:
+  enabled: true
+  address: "0.0.0.0:8686"
 
 sources:
   otel_source:

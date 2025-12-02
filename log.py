@@ -1,5 +1,6 @@
 import logging
 import json
+import sys
 from datetime import datetime
 
 class JSONFormatter(logging.Formatter):
@@ -30,7 +31,10 @@ file_handler.setFormatter(JSONFormatter())
 # Add handler to logger
 logger.addHandler(file_handler)
 
-# Add an example log message
-logger.info("This is an example log message written to app.log")
+# Get command line argument or use default
+message_suffix = sys.argv[1] if len(sys.argv) > 1 else ""
 
-print("Log message written to app.log in JSON format")
+# Add an example log message
+logger.info("This is an example log message written to app.log " + message_suffix)
+
+print("Log message written to app.log in JSON format with log line content suffix:" + message_suffix)

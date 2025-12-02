@@ -2,7 +2,7 @@
 
 This repo is used to demonstrate how to configure [Vector](https://vector.dev) data Sinks to [Dynatrace](https://dynatrace.com).
 
-This assumes installation of both Python, the sample Python app, and Vector on a MAC, but it can be adapted to other locations such as EC2 with Linux.
+This assumes installation of Git, Python, and Docker / Podman, but it can be adapted to other locations such as EC2 with Linux.
 
 To try out the demo, you will need to have 3 terminal windows.
 * terminal 1 - to run the Python scripts
@@ -16,7 +16,7 @@ To try out the demo, you will need to have 3 terminal windows.
 Clone this Repo and navigate to base folder of the cloned repo
 
 ```
-git clone git@github.com:dt-demos/otel-vector.git
+git clone https://github.com/dt-demos/vector
 cd otel-vector
 ```
 
@@ -39,41 +39,20 @@ To do this, first copy this template file and then edit the `.env` file for the 
 cp .env-template .env
 ```
 
-### Step 4: Install Vector 
-
-From the [Vector Docs](https://vector.dev/docs/setup/installation/package-managers/homebrew), run these command to install vector.  NOTE: You can also run Vector as a Docker container, but you will need to adjust this to use environment variables and the appropriate configuration files specified in this repo.
-
-```
-brew tap vectordotdev/brew && brew install vector
-```
-
-### Step 5: Validate Vector Config
-
-You first need to source the `.env` file and then run these commands to valdiate the Vector configuration files.
-
-```
-source .env
-vector validate --config-yaml logs/vector.yaml
-```
-
-You should see a message like
-
-```
-...
-√ Component configuration
-√ Health check "sink_dynatrace_otel_logs"
------------------------------------------------
-Validated
-```
-
-### Step 6: Install Python dependencies
+### Step 4: Install Python dependencies
 
 This example assumed the use an [Python Virtual Environment](https://www.w3schools.com/python/python_virtualenv.asp) as to isolate the required Python packages.
 
 To make virtual environment and install pacakges, run these commands.
+
 ```
+# make virtual environment 
 python3 -m venv otel-vector
+
+# activate a project environment 
 source otel-vector/bin/activate
+
+# install pacakges into project environment 
 pip install -r requirements.txt 
 ```
 
@@ -83,19 +62,41 @@ In this demo, you will start up vector with the configuration to send logs to th
 
 ### Step 1: Start Vector
 
-In a seperate terminal, run this command.  Enter `ctrl-c` to exit the program when done your demo.  
+In a seperate terminal, run these commands.  Enter `ctrl-c` to exit the program when done your demo.  
 
 ```
+# this is log file the python script makes and docker needs to map to
+touch app.log
+
+# set environment variables
 source .env
-vector --config-yaml logs/vector-otelcol.yaml
+
+# start vector
+podman run \
+  --rm \
+  -v $PWD/logs/vector.yaml:/etc/vector/vector.yaml \
+  -v $PWD/app.log:/etc/vector/app.log \
+  -e APP_LOG_DIR=/etc/vector \
+  -e VECTOR_LOG=$VECTOR_LOG \
+  -e DT_BASE_URL=$DT_BASE_URL \
+  -e DT_API_TOKEN=$DT_API_TOKEN \
+  -p 8686:8686 \
+  --name vector \
+  timberio/vector:0.51.1-debian
 ```
 
-### Approach 1 - Make a test log with Python script
+### Make a test log with Python script
 
 The vector config is looking for a `app.log` file and each time a row is added, it will send to Dynatrace. To simulate logs, in another terminal and in the base folder of the repo, make some logs by calling this Python script that will append a JSON log line to `app.log`
 
 ```
 python log.py
+```
+
+Optionally, add a custom log string as an argument
+
+```
+python log.py "my log 1"
 ```
 
 Within Dynatrace, you can verify logs in the `Logs App` with a DQL statment such as this.  
@@ -104,20 +105,6 @@ Within Dynatrace, you can verify logs in the `Logs App` with a DQL statment such
 fetch logs
 | filter matchesPhrase(content, "log.py")
 ```
-
-### Approach 2 - Make a test log using Vector demo_log source
-
-Vector has a [demo_logs](https://vector.dev/docs/reference/configuration/sources/demo_logs/) source than can also simulate logs.  In the the `logs\vector.yaml` file, this is configured but set to send zero logs.
-
-To try this option, just adjust that file for example to 5 logs lines as shown below.
-
-```
-demo_log_source:
-    type: demo_logs
-    count: 5
-```
-
-You then just need to stop and start vector again. At startup, vector will then send in sample logs and within Dynatrace, you can verify logs in the `Logs App`.
 
 # Demo of OTEL Data
 
@@ -128,18 +115,31 @@ In this demo, you will start up vector with the configuration to send data to th
 In a seperate terminal, run this command.  Enter `ctrl-c` to exit the program when done your demo.  
 
 ```
+# set environment variables
 source .env
-vector --config-yaml otel/vector-otelcol.yaml
+
+# start vector
+podman run \
+  --rm \
+  -v $PWD/otel/vector.yaml:/etc/vector/vector.yaml \
+  -v $PWD/app.log:/etc/vector/app.log \
+  -e VECTOR_LOG=$VECTOR_LOG \
+  -e DT_BASE_URL=$DT_BASE_URL \
+  -e DT_API_TOKEN=$DT_API_TOKEN \
+  -p 8686:8686 -p 4317:4317 -p 4318:4318 \
+  --name vector \
+  timberio/vector:0.51.1-debian
 ```
 
 ### Step 2: Start Sample App
 
-To start the Python app, run this command
+To start the Python app, run this command in a seperate terminal.  This web app will listen on port 5000 for http requests.
+
 ```
 python3 app.py 
 ```
 
-You will keep this running on one of your terminal windows.  Enter `ctrl-c` to exit the program.
+You will keep this running in one of your terminal windows.  Enter `ctrl-c` to exit the program.
 
 ### Step 3: Make a test log 
 

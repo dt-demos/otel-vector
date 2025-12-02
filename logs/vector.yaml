@@ -1,4 +1,6 @@
-data_dir: "${VECTOR_DATA_DIR}"
+api:
+  enabled: true
+  address: "0.0.0.0:8686"
 
 sources:
   demo_log_source:
@@ -9,7 +11,7 @@ sources:
   app_logs_source:
     type: "file"
     include:
-      - "app.log"
+      - "${APP_LOG_DIR}/app.log"
 
 transforms:
   app_logs_transform:

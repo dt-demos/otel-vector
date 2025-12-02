@@ -98,4 +98,8 @@ def trace_message():
     return "Trace message sent. " + query + "\n"
 
 if __name__ == '__main__':
+    # Disable Flask's default access logs (Werkzeug logger)
+    import logging as log
+    log.getLogger('werkzeug').setLevel(log.ERROR)
+    
     app.run(host='0.0.0.0', port=5000)
