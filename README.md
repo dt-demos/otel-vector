@@ -5,8 +5,8 @@ This repo is used to demonstrate how to configure [Vector](https://vector.dev) d
 This assumes installation of both Python, the sample Python app, and Vector on a MAC, but it can be adapted to other locations such as EC2 with Linux.
 
 To try out the demo, you will need to have 3 terminal windows.
-* terminal 1 - to run the Python sample app
-* terminal 2 - to run Vector as a command.  You can run as a service, but this way is easier for quick demoing and changing vector configurations
+* terminal 1 - to run the Python scripts
+* terminal 2 - to run Vector from command line. You can run as a service, but this way is easier for quick demoing and changing vector configurations
 * terminal 3 - to run command line to send requests to the sample app
 
 # Setup
@@ -54,7 +54,6 @@ You first need to source the `.env` file and then run these commands to valdiate
 ```
 source .env
 vector validate --config-yaml logs/vector.yaml
-vector validate --config-yaml otel/vector.yaml
 ```
 
 You should see a message like
@@ -62,7 +61,6 @@ You should see a message like
 ```
 ...
 √ Component configuration
-√ Health check "sink_dynatrace_otel_traces"
 √ Health check "sink_dynatrace_otel_logs"
 -----------------------------------------------
 Validated
@@ -79,13 +77,6 @@ source otel-vector/bin/activate
 pip install -r requirements.txt 
 ```
 
-To start the Python app, run this command
-```
-python3 app.py 
-```
-
-You will keep this running on one of your terminal windows.  Enter `ctrl-c` to exit the program.
-
 # Demo of HTTP Logs
 
 In this demo, you will start up vector with the configuration to send logs to the [Dynatrace Log Ingest API](https://docs.dynatrace.com/docs/discover-dynatrace/references/dynatrace-api/environment-api/log-monitoring-v2/post-ingest-logs).
@@ -99,22 +90,22 @@ source .env
 vector --config-yaml logs/vector.yaml
 ```
 
-### Step 2: Make a test log
+### Approach 1 - Make a test log with Python script
 
-The vector config is looking for a `app.log` file and each time a row is added, it will send to dynatrace. To simulate logs, in another terminal and in the base folder of the repo, make some logs.  
+The vector config is looking for a `app.log` file and each time a row is added, it will send to Dynatrace. To simulate logs, in another terminal and in the base folder of the repo, make some logs by calling this Python script that will append a JSON log line to `app.log`
 
 ```
-echo '{"content": "Test Log","log.source": "otel-vector","severity": "error"}' >> app.log
+python log.py
 ```
 
 Within Dynatrace, you can verify logs in the `Logs App` with a DQL statment such as this.  
 
 ```
 fetch logs
-| filter matchesPhrase(content,"Test Log")
+| filter matchesPhrase(content, "log.py")
 ```
 
-### Step 3: Make a test log using Vector demo_log source
+### Approach 2 - Make a test log using Vector demo_log source
 
 Vector has a [demo_logs](https://vector.dev/docs/reference/configuration/sources/demo_logs/) source than can also simulate logs.  In the the `logs\vector.yaml` file, this is configured but set to send zero logs.
 
@@ -141,7 +132,16 @@ source .env
 vector --config-yaml otel/vector.yaml
 ```
 
-### Step 2: Make a test logs 
+### Step 2: Start Sample App
+
+To start the Python app, run this command
+```
+python3 app.py 
+```
+
+You will keep this running on one of your terminal windows.  Enter `ctrl-c` to exit the program.
+
+### Step 3: Make a test log 
 
 In another terminal and in the base folder of the repo, make some logs by running this command.  The `q` querystring is the content for the log
 
@@ -149,14 +149,14 @@ In another terminal and in the base folder of the repo, make some logs by runnin
 curl http://localhost:5000/log?q=test_log
 ```
 
-Within Dynatrace, you can verify logs in the `Logs App` with a DQL statment such as this.  
+Within Dynatrace, you can verify logs in the `Logs App` with a DQL statment such as this. If you adjust the value of `q`, then adjust the DQL filter too.
 
 ```
 fetch logs
-| filter matchesValue(service.name, "test_log")
+| filter matchesPhrase(content, "test_log")
 ```
 
-### Step 3: Make a test spans 
+### Step 4: Make a test span
 
 In another terminal and in the base folder of the repo, make some logs by running this command.  The `q` querystring is the name of the trace request.
 

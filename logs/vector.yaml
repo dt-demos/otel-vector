@@ -1,4 +1,4 @@
-data_dir: "${CONFIG_DIR}/logs"
+data_dir: "${VECTOR_DATA_DIR}"
 
 sources:
   demo_log_source:
@@ -11,12 +11,21 @@ sources:
     include:
       - "app.log"
 
+transforms:
+  app_logs_transform:
+    type: remap
+    inputs:
+      - app_logs_source
+    # sets `.` to an array of objects
+    source: ". = parse_json!(.message)"
+
+# add max size to avoid backpressure issues
 sinks:
   sink_dynatrace_log:
     type: http
     inputs:
       - demo_log_source
-      - app_logs_source
+      - app_logs_transform
     uri: "${DT_BASE_URL}/api/v2/logs/ingest"
     method: post
     compression: gzip

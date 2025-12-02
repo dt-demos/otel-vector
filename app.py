@@ -14,20 +14,43 @@ from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExport
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.semconv.trace import SpanAttributes
 
+from opentelemetry import metrics
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+
 # Initialize Flask app
 app = Flask(__name__)
 
+# this assumes an OTLP collector is running locally on default port.  Adjust as needed.
 OTLP_COLLECTOR = "localhost:4317"
+
+# Initialize OpenTelemetry components will included with metrics, traces, and logs
 RESOURCE = Resource.create(attributes={
   "service.name": "otel-python-demo"
 })
 
+# initialize metrics exporter, provider, and meter
+metric_otlp_exporter = OTLPMetricExporter(endpoint=OTLP_COLLECTOR, insecure=True)
+metric_reader = PeriodicExportingMetricReader(metric_otlp_exporter)
+metric_provider=MeterProvider(resource=RESOURCE,metric_readers=[metric_reader])
+metrics.set_meter_provider(metric_provider)
+
+# initialize a counter metric
+meter = metrics.get_meter(__name__)
+request_counter = meter.create_counter(
+   name="demo.metric.my_metric",
+   description="Demo Metric."
+)
+
+# initialize traces exporter and provider
 trace_provider = TracerProvider(resource=RESOURCE)
 trace.set_tracer_provider(trace_provider)
 span_exporter = OTLPSpanExporter(endpoint=OTLP_COLLECTOR, insecure=True, )
 span_processor = BatchSpanProcessor(span_exporter)
 trace_provider.add_span_processor(span_processor)
 
+# initialize logger exporter and provider
 logger_provider = LoggerProvider(resource=RESOURCE)
 set_logger_provider(logger_provider)
 log_exporter = OTLPLogExporter(endpoint=OTLP_COLLECTOR, insecure=True)
@@ -42,12 +65,14 @@ logging.getLogger().addHandler(handler)
 # Define Flask routes
 @app.route('/')
 def index():
-    #request_counter.add(1) #, {"http.route": request.path})
+    # Metric increment
+    request_counter.add(1, {"http.route": request.path})
     return "Welcome to the OpenTelemetry Flask API!\n"
 
 @app.route('/log', methods=['GET'])
 def log_message():
-    #request_counter.add(1) #, {"http.route": request.path})
+    # Metric increment
+    request_counter.add(1, {"http.route": request.path})
     # Log message
     query = request.args.get('q', 'test log')
     logging.warning("This is a warning log message. " + query)
@@ -56,14 +81,18 @@ def log_message():
 
 @app.route('/trace', methods=['GET'])
 def trace_message():
-    #request_counter.add(1) #, {"http.route": request.path})
+    # Metric increment
+    request_counter.add(1, {"http.route": request.path})
     # Trace message
     tracer = trace.get_tracer(__name__)
     query = request.args.get('q', 'test trace')
     with tracer.start_as_current_span("parent " + query):
+        # add attribute to parent span
         current_span = trace.get_current_span()
-        current_span.set_attribute(SpanAttributes.HTTP_URL, "https://app2.io/")
+        current_span.set_attribute(SpanAttributes.HTTP_URL, "https://demoapp.com/")
+        # Log message to parent span
         logging.error("This is an error log message with trace context. parent " + query)
+        # add child span with log message
         with tracer.start_as_current_span("child " + query) as child:
           logging.error("This is an error log message with trace context. child " + query)
     return "Trace message sent. " + query + "\n"

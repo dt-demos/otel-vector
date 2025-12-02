@@ -1,4 +1,4 @@
-data_dir: "${CONFIG_DIR}/otel"
+data_dir: "${VECTOR_DATA_DIR}"
 
 sources:
   otel_source:
@@ -11,26 +11,34 @@ sources:
 
 sinks:
   sink_dynatrace_otel_logs:
-    type: http
+    type: opentelemetry
     inputs:
       - otel_source.logs
-    method: post
-    uri: "${DT_BASE_URL}/api/v2/otlp/v1/logs"
-    encoding:
-      codec: otlp
-    headers:
-      Authorization: "Api-Token ${DT_API_TOKEN}"
-      Content-Type: "application/x-protobuf"
+    protocol:
+      type: http
+      compression: gzip
+      method: post
+      uri: "${DT_BASE_URL}/api/v2/otlp/v1/logs"
+      encoding:
+        codec: otlp
+      request:
+        headers:
+          Authorization: "Api-Token ${DT_API_TOKEN}"
+          Content-Type: "application/x-protobuf"
 
   sink_dynatrace_otel_traces:
-    type: http 
+    type: opentelemetry
+    enabled: false
     inputs:
       - otel_source.traces
-    compression: gzip
-    method: post
-    uri: "${DT_BASE_URL}/api/v2/otlp/v1/traces"
-    encoding:
-      codec: otlp
-    headers:
-      Authorization: "Api-Token ${DT_API_TOKEN}"
-      Content-Type: "application/x-protobuf"
+    protocol:
+      type: http
+      compression: gzip
+      method: post
+      uri: "${DT_BASE_URL}/api/v2/otlp/v1/traces"
+      encoding:
+        codec: otlp
+      request:
+        headers:
+          Authorization: "Api-Token ${DT_API_TOKEN}"
+          Content-Type: "application/x-protobuf"
