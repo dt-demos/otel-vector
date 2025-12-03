@@ -16,7 +16,7 @@ To try out the demo, you will need to have 3 terminal windows.
 Clone this Repo and navigate to base folder of the cloned repo
 
 ```
-git clone https://github.com/dt-demos/vector
+git clone https://github.com/dt-demos/otel-vector.git
 cd otel-vector
 ```
 
