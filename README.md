@@ -6,17 +6,17 @@ This assumes installation of Git, Python, and Docker / Podman running on your la
 
 To try out the demo, you will need to have a few terminal windows open. You can re-use terminals between trying out the demos.
 * Demo of HTTP Logs
-  * terminal 1 - to run Python Sample Apps
-  * terminal 2 - to start Vector using Docker
+  * terminal 1 - to run Python script (log.py) - writes logs to `app.log` file in the root folder
+  * terminal 2 - to start Vector using Docker - Vector config is in the `logs` sub-folder 
 * Demo of OTEL Data - Logs and Traces
-  * terminal 1 - to run Python Sample Apps
-  * terminal 2 - to start Vector using Docker
-  * terminal 3 - to run curl command to send requests to sample app
+  * terminal 1 - to start Python Web App (app.py) - Flask based web app running on port 5000 
+  * terminal 2 - to start Vector using Docker - Vector config is in the `otel` sub-folder
+  * terminal 3 - to run curl command to send requests to sample app `/logs` and `/traces` endpoints
 * Demo of OTEL Data - Logs, Traces and Metrics
-  * terminal 1 - to run Python Sample Apps
-  * terminal 2 - to start Vector using Docker
-  * terminal 3 - to run curl command to send requests to sample app
-  * terminal 4 - to start OpenTelemetry Collector using Docker
+  * terminal 1 - to start Python Web App (app.py) - Flask web app running on port 5000 
+  * terminal 2 - to start Vector using Docker - Vector config is in the `otel-collector` sub-folder
+  * terminal 3 - to start OpenTelemetry Collector using Docker - Otel config is in the `otel-collector` sub-folder
+  * terminal 4 - to run curl command to send requests to sample app `/logs` and `/traces` endpoints
 
 # Setup
 
