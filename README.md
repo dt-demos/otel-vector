@@ -2,12 +2,21 @@
 
 This repo is used to demonstrate how to configure [Vector](https://vector.dev) data Sinks to [Dynatrace](https://dynatrace.com).
 
-This assumes installation of Git, Python, and Docker / Podman, but it can be adapted to other locations such as EC2 with Linux.
+This assumes installation of Git, Python, and Docker / Podman running on your laptop, but it can be adapted run on another locations such as EC2 with Amazon Linux.
 
-To try out the demo, you will need to have 3 terminal windows.
-* terminal 1 - to run the Python scripts
-* terminal 2 - to run Vector from command line. You can run as a service, but this way is easier for quick demoing and changing vector configurations
-* terminal 3 - to run command line to send requests to the sample app
+To try out the demo, you will need to have a few terminal windows open. You can re-use terminals between trying out the demos.
+* Demo of HTTP Logs
+  * terminal 1 - to run Python Sample Apps
+  * terminal 2 - to start Vector using Docker
+* Demo of OTEL Data - Logs and Traces
+  * terminal 1 - to run Python Sample Apps
+  * terminal 2 - to start Vector using Docker
+  * terminal 3 - to run curl command to send requests to sample app
+* Demo of OTEL Data - Logs, Traces and Metrics
+  * terminal 1 - to run Python Sample Apps
+  * terminal 2 - to start Vector using Docker
+  * terminal 3 - to run curl command to send requests to sample app
+  * terminal 4 - to start OpenTelemetry Collector using Docker
 
 # Setup
 
