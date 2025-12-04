@@ -18,6 +18,13 @@ To try out the demo, you will need to have a few terminal windows open. You can 
   * terminal 3 - to start OpenTelemetry Collector using Docker - Otel config is in the `otel-collector` sub-folder
   * terminal 4 - to run curl command to send requests to sample app `/logs` and `/traces` endpoints
 
+
+## Overview YouTube Video
+
+[<img alt="Vector to Dynatrace" src="images/vector.png" width="30%">](https://www.youtube.com/watch?v=0QTAD4jvIhA)
+
+[YouTube Video](https://www.youtube.com/watch?v=0QTAD4jvIhA)
+
 # Setup
 
 ### Step 1: Clone Repo
@@ -120,8 +127,11 @@ Within Dynatrace, you can verify logs in the `Logs App` with a DQL statment such
 
 ```
 fetch logs
-| filter matchesPhrase(content, "log.py")
+| filter service.name == "otel-python-demo" and code.function.name == "log_message"
+| sort timestamp desc
 ```
+
+<img alt="Logs" src="images/logs.png" width="50%">
 
 # Demo of OTEL Data - Logs and Traces
 
@@ -182,7 +192,8 @@ Within Dynatrace, you can verify logs in the `Logs App` with a DQL statment such
 
 ```
 fetch logs
-| filter matchesPhrase(content, "test_log")
+| filter service.name == "otel-python-demo" and code.function.name == "trace_message"
+| sort timestamp desc
 ```
 
 ### Step 4: Make a test span
@@ -195,6 +206,7 @@ curl http://localhost:5000/trace?q=test_span
 
 Within Dynatrace, you can verify logs in the `Distributed Traces App`
 
+<img alt="Traces" src="images/traces.png" width="50%">
 
 # Demo of OTEL Data - Logs, Traces and Metrics
 
@@ -265,3 +277,11 @@ The Demo metric has the name `demo.metric.my_metric`.  To view the metrics, use 
 ```
 timeseries interval:5m, sum_metric = sum(demo.metric.my_metric)
 ```
+
+And split by endpoint
+
+```
+timeseries by:{http.route}, interval:5m, sum_metric = sum(demo.metric.my_metric)
+```
+
+<img alt="Metrics" src="images/metrics.png" width="50%">
